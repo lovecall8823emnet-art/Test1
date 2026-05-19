@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Brief Generator</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f8f8f7; --bg3: #f1f0ed;
+    --text: #1a1a1a; --text2: #666; --text3: #999;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --accent: #0066ff; --accent-bg: #e8f0ff; --accent-text: #003ab3;
+    --success-bg: #e6f5ec; --success-border: rgba(0,120,60,0.25); --success-text: #0a5c2a;
+    --warn-bg: #fff8e6; --warn-text: #7a4f00;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a; --bg2: #242424; --bg3: #2e2e2e;
+      --text: #f0f0f0; --text2: #aaa; --text3: #666;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --accent: #4d9fff; --accent-bg: #0d2a4d; --accent-text: #99ccff;
+      --success-bg: #0d2a1a; --success-border: rgba(0,180,80,0.3); --success-text: #66cc88;
+      --warn-bg: #2a1f00; --warn-text: #ffcc66;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .container { max-width: 720px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .header p { font-size: 14px; color: var(--text2); }
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .step-bar { display: flex; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; background: var(--bg); }
+  .sbtn { flex: 1; padding: 9px 4px; font-size: 12px; font-weight: 500; text-align: center; background: transparent; color: var(--text2); border: none; cursor: pointer; border-right: 0.5px solid var(--border); }
+  .sbtn:last-child { border-right: none; }
+  .sbtn.on { background: var(--bg2); color: var(--text); }
+  .panel { display: none; }
+  .panel.on { display: block; }
+  .lbl { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 5px; }
+  .fr { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .fg { margin-bottom: 1rem; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; background: var(--bg); color: var(--text); font-family: inherit; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,102,255,0.12); }
+  textarea { resize: vertical; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 1rem; }
+  .chip { padding: 5px 12px; border-radius: 20px; font-size: 13px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; user-select: none; transition: all 0.12s; }
+  .chip.on { background: var(--accent-bg); color: var(--accent-text); border-color: transparent; font-weight: 500; }
+  .fmt-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+  .fc { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.12s; background: var(--bg); }
+  .fc.on { border-color: var(--accent); background: var(--accent-bg); }
+  .fc .r { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .fc .n { font-size: 11px; color: var(--text2); }
+  .fc.on .n { color: var(--accent-text); }
+  .drop-zone { border: 1.5px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem 1rem; text-align: center; cursor: pointer; color: var(--text2); font-size: 14px; transition: all 0.15s; margin-bottom: 1rem; }
+  .drop-zone:hover { border-color: var(--accent); background: var(--accent-bg); }
+  .pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 1rem; }
+  .pi { position: relative; border-radius: var(--radius); overflow: hidden; aspect-ratio: 1; background: var(--bg2); }
+  .pi img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .pi .xb { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--bg); border: 0.5px solid var(--border2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text2); }
+  .btn { width: 100%; padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); transition: background 0.15s; margin-top: 4px; font-family: inherit; }
+  .btn:hover { background: var(--bg2); }
+  .btn.primary { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-text); }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn.success { border-color: var(--success-border); background: var(--success-bg); color: var(--success-text); }
+  .analyze-btn { width: 100%; padding: 9px; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: var(--radius); border: 1.5px solid var(--accent); background: var(--accent-bg); color: var(--accent-text); margin-bottom: 1rem; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .vision-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; margin-bottom: 1rem; }
+  .mood-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .mood-tag { font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--text); background: var(--bg); }
+  .color-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+  .swatch { width: 26px; height: 26px; border-radius: 6px; border: 0.5px solid var(--border); flex-shrink: 0; }
+  .trend-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .trend-item { background: var(--bg); border-radius: var(--radius); padding: 8px 10px; border: 0.5px solid var(--border); }
+  .trend-item .tn { font-size: 12px; font-weight: 600; color: var(--text); }
+  .trend-item .td { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+  .tone-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 9px; border-radius: 20px; background: var(--warn-bg); color: var(--warn-text); font-weight: 500; margin-left: 8px; vertical-align: middle; }
+  .osec { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.125rem; margin-bottom: 1rem; }
+  .osec .ol { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text2); margin: 0 0 8px; }
+  .ocontent { font-size: 14px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+  .clist { list-style: none; }
+  .ci { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .ci:last-child { border-bottom: none; }
+  .ctag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .th { background: #e8f0ff; color: #003ab3; }
+  .ts { background: #e1f5ee; color: #085041; }
+  .tc { background: #fff3db; color: #7a4000; }
+  .tk { background: #fce8f0; color: #7a1a3a; }
+  .ctxt { font-size: 14px; color: var(--text); line-height: 1.6; flex: 1; }
+  .cbtn { font-size: 12px; padding: 3px 9px; border-radius: var(--radius); border: 0.5px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; flex-shrink: 0; font-family: inherit; }
+  .act-row { display: flex; gap: 8px; margin-top: 0.75rem; flex-wrap: wrap; }
+  .abtn { font-size: 13px; padding: 7px 14px; border-radius: var(--radius); border: 0.5px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+  .abtn:hover { background: var(--bg2); }
+  .pptbtn { font-size: 13px; padding: 7px 16px; border-radius: var(--radius); border: 0.5px solid var(--success-border); background: var(--success-bg); color: var(--success-text); cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+  .mock-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .mt { font-size: 12px; padding: 4px 12px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; font-family: inherit; }
+  .mt.on { background: var(--bg2); color: var(--text); font-weight: 500; }
+  .mframe { border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg2); }
+  .mfeed { padding: 12px; }
+  .mimgbox { border-radius: var(--radius); overflow: hidden; background: var(--bg3); aspect-ratio: 1; width: 100%; display: flex; align-items: center; justify-content: center; margin: 8px 0; }
+  .mimgbox img { width: 100%; height: 100%; object-fit: contain; }
+  .mctabtn { display: inline-block; font-size: 13px; font-weight: 500; padding: 6px 16px; border-radius: var(--radius); background: var(--bg); border: 0.5px solid var(--border2); color: var(--text); }
+  .ppt-info { margin-top: 1rem; padding: 0.875rem 1rem; background: var(--success-bg); border: 0.5px solid var(--success-border); border-radius: var(--radius); font-size: 13px; color: var(--success-text); line-height: 1.6; }
+  .warn-box { background: var(--warn-bg); border-radius: var(--radius); padding: 10px 12px; font-size: 12px; color: var(--warn-text); margin-top: 8px; line-height: 1.6; }
+  .api-setup { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
+  .api-setup input { font-family: monospace; }
+  .dot { display: inline-block; animation: blink 0.9s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  @media (max-width: 520px) { .fr { grid-template-columns: 1fr; } .fmt-row { grid-template-columns: repeat(2,1fr); } .trend-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Ad Brief Generator</h1>
+    <p>이미지 분석 · 톤앤무드 추론 · 브리프 + 카피 자동 생성</p>
+  </div>
+
+  <div class="api-setup">
+    <p class="lbl">Anthropic API 키 입력</p>
+    <input type="password" id="api-key" placeholder="sk-ant-api03-..." oninput="saveKey(this.value)">
+    <div class="warn-box">키는 브라우저 로컬에만 저장되며 외부로 전송되지 않습니다. platform.claude.com에서 발급받으세요.</div>
+  </div>
+
+  <div class="step-bar">
+    <button class="sbtn on" onclick="goStep(0)">01 이미지</button>
+    <button class="sbtn" onclick="goStep(1)">02 캠페인</button>
+    <button class="sbtn" onclick="goStep(2)">03 결과+PPT</button>
+  </div>
+
+  <div id="p0" class="panel on">
+    <div class="card">
+      <p class="lbl">시안 / 제품 이미지 업로드</p>
+      <div class="drop-zone" id="dz" onclick="document.getElementById('fi').click()" ondragover="event.preventDefault()" ondrop="doDrop(event)">
+        <i class="ti ti-photo-ai" style="font-size:28px;display:block;margin-bottom:8px;"></i>
+        시안·제품컷·누끼 이미지 드래그 또는 클릭<br>
+        <span style="font-size:12px;margin-top:4px;display:block;">AI가 색감·구도·분위기를 읽어 톤앤무드 추론 · 최대 4장</span>
+      </div>
+      <input type="file" id="fi" accept="image/*" multiple style="display:none" onchange="doFiles(this.files)">
+      <div class="pgrid" id="pg"></div>
+      <div id="analyze-wrap" style="display:none;">
+        <button class="analyze-btn" id="abtn" onclick="analyzeImages()">
+          <i class="ti ti-eye" style="font-size:15px;"></i> 이미지 분석 → 톤앤무드 추론
+        </button>
+      </div>
+      <div id="vision-result" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <p class="lbl">소재 노출 포맷</p>
+      <div class="fmt-row">
+        <div class="fc on" data-fmt="1:1 피드" onclick="tFmt(this)"><div class="r">1:1</div><div class="n">피드/GFA</div></div>
+        <div class="fc" data-fmt="9:16 릴스" onclick="tFmt(this)"><div class="r">9:16</div><div class="n">릴스/숏폼</div></div>
+        <div class="fc" data-fmt="16:9 유튜브" onclick="tFmt(this)"><div class="r">16:9</div><div class="n">유튜브/GDN</div></div>
+        <div class="fc" data-fmt="배너" onclick="tFmt(this)"><div class="r" style="font-size:14px;">배너</div><div class="n">네이버DA/크리테오</div></div>
+        <div class="fc" data-fmt="SA 텍스트" onclick="tFmt(this)"><div class="r" style="font-size:14px;">SA</div><div class="n">검색광고</div></div>
+        <div class="fc" data-fmt="카드뉴스" onclick="tFmt(this)"><div class="r" style="font-size:14px;">카드</div><div class="n">카드뉴스</div></div>
+      </div>
+    </div>
+    <button class="btn" onclick="goStep(1)">다음 → 캠페인 정보</button>
+  </div>
+
+  <div id="p1" class="panel">
+    <div class="card">
+      <div class="fr">
+        <div><p class="lbl">브랜드/상품명</p><input type="text" id="brand" placeholder="예) 무신사 스탠다드"></div>
+        <div><p class="lbl">캠페인 목표</p>
+          <select id="goal">
+            <option value="">선택</option>
+            <option value="전환(구매/가입)">전환 (구매/가입)</option>
+            <option value="트래픽(클릭/방문)">트래픽 (클릭/방문)</option>
+            <option value="인지도(노출/도달)">인지도 (노출/도달)</option>
+            <option value="리타겟팅(재방문 유도)">리타겟팅</option>
+            <option value="앱 설치">앱 설치</option>
+          </select>
+        </div>
+      </div>
+      <p class="lbl">집행 매체</p>
+      <div class="chips" id="mc">
+        <span class="chip" data-v="네이버 SA">네이버 SA</span>
+        <span class="chip" data-v="네이버 GFA">네이버 GFA</span>
+        <span class="chip" data-v="카카오모먼트">카카오</span>
+        <span class="chip on" data-v="메타(Facebook/Instagram)">메타</span>
+        <span class="chip" data-v="구글 GDN/유튜브">구글/유튜브</span>
+        <span class="chip" data-v="크리테오">크리테오</span>
+        <span class="chip" data-v="틱톡">틱톡</span>
+      </div>
+      <div class="fr">
+        <div><p class="lbl">타겟 고객</p><input type="text" id="target" placeholder="예) 20-35세 여성"></div>
+        <div><p class="lbl">월 예산</p><input type="text" id="budget" placeholder="예) 3,000만원"></div>
+      </div>
+      <div class="fg"><p class="lbl">핵심 메시지 / USP</p><textarea id="usp" rows="2" placeholder="가성비 + 트렌디한 베이직, 신상 20% 할인"></textarea></div>
+      <div class="fg">
+        <p class="lbl">톤앤매너 <span id="tone-badge" style="display:none;" class="tone-badge"><i class="ti ti-sparkles" style="font-size:11px;"></i> AI 분석 반영</span></p>
+        <div class="chips" id="tc">
+          <span class="chip on" data-v="트렌디하고 감각적인">트렌디</span>
+          <span class="chip" data-v="신뢰감 있는 전문적인">전문/신뢰</span>
+          <span class="chip" data-v="친근하고 유머러스한">친근/유머</span>
+          <span class="chip" data-v="럭셔리하고 프리미엄">럭셔리</span>
+          <span class="chip" data-v="감성적이고 따뜻한">감성/따뜻</span>
+          <span class="chip" data-v="직접적이고 혜택 중심의">혜택 직접</span>
+          <span class="chip" data-v="미니멀하고 세련된">미니멀</span>
+          <span class="chip" data-v="빈티지하고 레트로한">레트로</span>
+          <span class="chip" data-v="다크하고 엣지있는">다크/엣지</span>
+          <span class="chip" data-v="내추럴하고 유기적인">내추럴</span>
+        </div>
+      </div>
+      <div class="fg"><p class="lbl">추가 요청 (선택)</p><textarea id="extra" rows="2" placeholder="금지 표현, 강조 포인트 등"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" style="flex:0 0 72px;" onclick="goStep(0)">← 이전</button>
+      <button class="btn primary" onclick="doGenerate()" style="flex:1;">✦ 브리프 + 카피 생성</button>
+    </div>
+  </div>
+
+  <div id="p2" class="panel">
+    <div id="oa" style="color:var(--text2);font-size:14px;padding:2rem 0;text-align:center;">
+      <span class="dot">●</span> AI가 작성 중입니다...
+    </div>
+  </div>
+</div>
+
+<script>
+let imgs=[], fmts=['1:1 피드'], visionData=null, lastData=null;
+const API_URL='https://api.anthropic.com/v1/messages';
+
+function getKey(){return document.getElementById('api-key').value.trim()||localStorage.getItem('adbrief_key')||'';}
+function saveKey(v){if(v)localStorage.setItem('adbrief_key',v);}
+window.addEventListener('load',()=>{const k=localStorage.getItem('adbrief_key');if(k)document.getElementById('api-key').value=k;});
+
+function goStep(n){
+  ['p0','p1','p2'].forEach((id,i)=>{document.getElementById(id).classList.toggle('on',i===n);document.querySelectorAll('.sbtn')[i].classList.toggle('on',i===n);});
+}
+function doFiles(files){[...files].slice(0,4-imgs.length).forEach(f=>{if(!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>addImg(e.target.result);r.readAsDataURL(f);});}
+function doDrop(e){e.preventDefault();doFiles(e.dataTransfer.files);}
+function addImg(src){if(imgs.length>=4)return;imgs.push(src);renderImgs();}
+function removeImg(i){imgs.splice(i,1);renderImgs();}
+function renderImgs(){
+  document.getElementById('pg').innerHTML=imgs.map((s,i)=>`<div class="pi"><img src="${s}" alt="img ${i+1}"><button class="xb" onclick="removeImg(${i})"><i class="ti ti-x" style="font-size:11px;"></i></button></div>`).join('');
+  document.getElementById('dz').style.display=imgs.length?'none':'';
+  document.getElementById('analyze-wrap').style.display=imgs.length?'block':'none';
+}
+function tFmt(el){el.classList.toggle('on');fmts=[...document.querySelectorAll('.fc.on')].map(c=>c.dataset.fmt);}
+document.querySelectorAll('.chips').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on'))));
+function gChips(id){return[...document.querySelectorAll(`#${id} .chip.on`)].map(c=>c.dataset.v);}
+
+async function callAPI(messages, maxTokens=1200){
+  const key=getKey();
+  if(!key){alert('API 키를 먼저 입력해주세요.');return null;}
+  const resp=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages})});
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API 오류');}
+  const data=await resp.json();
+  return data.content?.map(b=>b.text||'').join('')||'';
+}
+
+async function analyzeImages(){
+  const btn=document.getElementById('abtn');
+  btn.disabled=true;btn.innerHTML='<span class="dot">●</span> 분석 중...';
+  const imgContent=imgs.map(src=>({type:'image',source:{type:'base64',media_type:src.startsWith('data:image/png')?'image/png':src.startsWith('data:image/webp')?'image/webp':'image/jpeg',data:src.split(',')[1]}}));
+  const prompt=`당신은 비주얼 크리에이티브 디렉터입니다. 업로드된 광고 시안 또는 제품 이미지를 분석하여 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만.
+
+{"overall_mood":"전체적인 분위기 한 문장","color_palette":{"dominant":["#hex1","#hex2","#hex3"],"description":"색상 분위기"},"style_keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"trend_matches":[{"name":"트렌드명1","desc":"이유 1줄"},{"name":"트렌드명2","desc":"이유 1줄"},{"name":"트렌드명3","desc":"이유 1줄"}],"recommended_tones":["톤1","톤2","톤3"],"visual_direction":"소재 제작 방향 2~3줄","media_fit":{"best":"최적 매체와 이유","caution":"주의점"},"copy_vibe":"어울리는 카피 톤 설명"}
+
+트렌드명은 2024-2026 실제 비주얼 트렌드 사용: Quiet Luxury, Clean Girl, Dark Academia, Y2K, Coastal Grandmother, Dopamine Dressing, Indie Sleaze, Gorpcore, Mob Wife, Old Money, Soft Life 등.`;
+  try{
+    const raw=await callAPI([{role:'user',content:[...imgContent,{type:'text',text:prompt}]}],900);
+    if(!raw)return;
+    visionData=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    renderVision(visionData);
+    applyTones(visionData.recommended_tones||[]);
+  }catch(e){document.getElementById('vision-result').style.display='block';document.getElementById('vision-result').innerHTML='<p style="color:var(--text2);font-size:13px;padding:8px 0;">분석 오류: '+e.message+'</p>';}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-eye" style="font-size:15px;"></i> 다시 분석';
+}
+
+function renderVision(v){
+  const swatches=(v.color_palette?.dominant||[]).map(c=>`<div class="swatch" style="background:${c};" title="${c}"></div><span style="font-size:11px;color:var(--text2);">${c}</span>`).join('');
+  const tags=(v.style_keywords||[]).map(k=>`<span class="mood-tag">${k}</span>`).join('');
+  const trends=(v.trend_matches||[]).map(t=>`<div class="trend-item"><div class="tn">${t.name}</div><div class="td">${t.desc}</div></div>`).join('');
+  document.getElementById('vision-result').style.display='block';
+  document.getElementById('vision-result').innerHTML=`<div class="vision-card"><p class="lbl" style="margin-bottom:8px;">AI 이미지 분석 결과</p><p style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:10px;">${v.overall_mood||''}</p><p class="lbl">추출 색상</p><div class="color-row">${swatches}</div><p class="lbl" style="margin-top:10px;">스타일 키워드</p><div class="mood-tags">${tags}</div><p class="lbl" style="margin-top:10px;">매칭 비주얼 트렌드</p><div class="trend-row">${trends}</div><p class="lbl" style="margin-top:10px;">소재 제작 방향</p><p style="font-size:13px;color:var(--text);line-height:1.6;">${v.visual_direction||''}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;"><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;"><p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:3px;">최적 매체</p><p style="font-size:12px;color:var(--text);line-height:1.5;">${v.media_fit?.best||''}</p></div><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;"><p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:3px;">카피 바이브</p><p style="font-size:12px;color:var(--text);line-height:1.5;">${v.copy_vibe||''}</p></div></div></div>`;
+}
+
+function applyTones(tones){
+  const map={'트렌디':'트렌디하고 감각적인','전문':'신뢰감 있는 전문적인','신뢰':'신뢰감 있는 전문적인','친근':'친근하고 유머러스한','럭셔리':'럭셔리하고 프리미엄','프리미엄':'럭셔리하고 프리미엄','감성':'감성적이고 따뜻한','따뜻':'감성적이고 따뜻한','혜택':'직접적이고 혜택 중심의','미니멀':'미니멀하고 세련된','세련':'미니멀하고 세련된','레트로':'빈티지하고 레트로한','빈티지':'빈티지하고 레트로한','다크':'다크하고 엣지있는','엣지':'다크하고 엣지있는','내추럴':'내추럴하고 유기적인'};
+  document.querySelectorAll('#tc .chip').forEach(c=>c.classList.remove('on'));
+  tones.forEach(t=>{document.querySelectorAll('#tc .chip').forEach(c=>{const v=c.dataset.v;if(Object.entries(map).some(([k,m])=>m===v&&t.toLowerCase().includes(k.toLowerCase())))c.classList.add('on');});});
+  document.getElementById('tone-badge').style.display='inline-flex';
+}
+
+async function doGenerate(){
+  const brand=document.getElementById('brand').value.trim();
+  const goal=document.getElementById('goal').value;
+  if(!brand||!goal){alert('브랜드명과 목표는 필수입니다.');goStep(1);return;}
+  goStep(2);
+  document.getElementById('oa').innerHTML='<div style="padding:2rem 0;text-align:center;color:var(--text2);"><span class="dot">●</span> AI가 브리프와 카피를 작성 중...</div>';
+  const media=gChips('mc'),tone=gChips('tc'),target=document.getElementById('target').value,budget=document.getElementById('budget').value,usp=document.getElementById('usp').value,extra=document.getElementById('extra').value;
+  let vc=imgs.length?`이미지 ${imgs.length}장 업로드됨.`:'이미지 없음.';
+  if(visionData)vc=`[비전분석] 분위기:${visionData.overall_mood} / 키워드:${(visionData.style_keywords||[]).join(',')} / 트렌드:${(visionData.trend_matches||[]).map(t=>t.name).join(',')} / 방향:${visionData.visual_direction} / 카피바이브:${visionData.copy_vibe}`;
+  const prompt=`국내 퍼포먼스 마케팅 전문 크리에이티브 AE로서 브리프와 카피를 작성하세요.\n브랜드:${brand} / 목표:${goal} / 매체:${media.join(',')||'미지정'} / 타겟:${target||'미지정'} / 예산:${budget||'미지정'} / USP:${usp||'미지정'} / 톤:${tone.join(',')||'미지정'} / 포맷:${fmts.join(',')||'미지정'} / 추가:${extra||'없음'}\n${vc}\n\n===브리프===\n[캠페인 개요] 내용\n[타겟 페르소나] 내용\n[소재 비주얼 가이드] 비전 분석 결과를 구체적으로 반영\n[매체별 전략] 내용\n[KPI] 내용\n\n===카피===\n[헤드라인] 카피\n[서브] 카피\n[CTA] 버튼\n[훅] 후킹문구\n[헤드라인] 세트2\n[서브] 세트2\n[CTA] 세트2\n[훅] 세트2`;
+  try{
+    const text=await callAPI([{role:'user',content:prompt}],1500);
+    if(!text)return;
+    const[br,cr]=text.split('===카피===');
+    const briefText=(br||'').replace('===브리프===','').trim();
+    const copies=[];
+    (cr||'').split('\n').filter(l=>l.trim()).forEach(line=>{const m=line.match(/^\[(헤드라인|서브|CTA|훅)\]\s*(.+)/);if(m)copies.push({tag:m[1],text:m[2].trim()});});
+    const kpiList=((briefText.match(/\[KPI\]\s*([^\[]+)/)||[])[1]||'').split(/[,·\n]/).map(k=>k.trim()).filter(Boolean);
+    const tagCls={헤드라인:'th',서브:'ts',CTA:'tc',훅:'tk'};
+    const copyHtml=copies.map(c=>`<li class="ci"><span class="ctag ${tagCls[c.tag]||'ts'}">${c.tag}</span><span class="ctxt">${c.text}</span><button class="cbtn" onclick="cpTxt('${c.text.replace(/'/g,"\\'")}')"><i class="ti ti-copy" style="font-size:12px;"></i></button></li>`).join('');
+    const mc={head:copies.find(c=>c.tag==='헤드라인')?.text||'',sub:copies.find(c=>c.tag==='서브')?.text||'',cta:copies.find(c=>c.tag==='CTA')?.text||'지금 보기'};
+    lastData={brand,goal,media,target,budget,formats:fmts,tone,briefText,copies,kpi:kpiList,visionSummary:visionData?{mood:visionData.overall_mood,trends:(visionData.trend_matches||[]).map(t=>t.name),visualDirection:visionData.visual_direction}:null};
+    const img0=imgs.length?imgs[0]:null;
+    const iHtml=img0?`<img src="${img0}" alt="product">`:`<div style="color:var(--text3);font-size:13px;"><i class="ti ti-photo" style="font-size:24px;display:block;margin-bottom:4px;"></i></div>`;
+    let vsBadge='';
+    if(visionData){const tr=(visionData.trend_matches||[]).slice(0,2).map(t=>`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--warn-bg);color:var(--warn-text);margin-right:4px;">${t.name}</span>`).join('');vsBadge=`<div class="osec"><p class="ol">이미지 분석 반영</p><p style="font-size:13px;color:var(--text);margin:4px 0 6px;line-height:1.6;">${visionData.overall_mood||''}</p>${tr}</div>`;}
+    document.getElementById('oa').innerHTML=`${vsBadge}<div class="osec"><p class="ol">애드브리프</p><div class="ocontent">${briefText}</div></div><div class="osec"><p class="ol">카피 추천</p><ul class="clist">${copyHtml}</ul></div><div style="margin-top:1rem;"><p class="lbl" style="margin-bottom:8px;">소재 예시 미리보기</p><div class="mock-tabs"><button class="mt on" onclick="swMt(this,0)">메타 피드</button><button class="mt" onclick="swMt(this,1)">네이버 배너</button><button class="mt" onclick="swMt(this,2)">검색광고 SA</button></div><div class="mframe"><div id="mt0"><div class="mfeed"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:32px;height:32px;border-radius:50%;background:var(--bg3);"></div><div><div style="font-size:13px;font-weight:500;">${brand}</div><div style="font-size:10px;color:var(--text3);">광고</div></div></div><div class="mimgbox">${iHtml}</div><div style="font-size:14px;font-weight:500;margin-bottom:3px;">${mc.head||'헤드라인'}</div><div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.5;">${mc.sub||'서브 카피'}</div><span class="mctabtn">${mc.cta||'지금 보기'}</span></div></div><div id="mt1" style="display:none;"><div style="padding:10px 14px;display:flex;align-items:center;gap:10px;"><div style="width:80px;height:80px;border-radius:var(--radius);background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;">${iHtml}</div><div><div style="font-size:13px;font-weight:500;">${mc.head||'헤드라인'}</div><div style="font-size:12px;color:var(--text2);margin:2px 0;">${mc.sub||'서브'}</div><div style="font-size:11px;font-weight:500;color:#0066ff;">${mc.cta||'자세히 보기 >'}</div></div></div></div><div id="mt2" style="display:none;"><div style="padding:10px 14px;"><div style="display:flex;gap:6px;margin-bottom:8px;"><span style="padding:5px 10px;background:var(--bg3);border-radius:4px;font-size:12px;">${brand}</span><span style="padding:5px 10px;background:var(--bg3);border-radius:4px;font-size:12px;">추천</span></div><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;"><div style="font-size:10px;color:orange;font-weight:500;margin-bottom:2px;">광고</div><div style="font-size:14px;color:#0066ff;font-weight:500;margin-bottom:3px;">${mc.head||'헤드라인'}</div><div style="font-size:12px;color:var(--text2);line-height:1.5;">${mc.sub||'설명'} | ${brand}</div></div></div></div></div></div><div class="act-row"><button class="pptbtn" onclick="reqPPT()"><i class="ti ti-file-type-ppt" style="font-size:15px;"></i> PPT 요청 (Claude에서)</button><button class="abtn" onclick="cpAll()"><i class="ti ti-copy" style="font-size:13px;"></i> 전체 복사</button><button class="abtn" onclick="goStep(1)"><i class="ti ti-refresh" style="font-size:13px;"></i> 다시 생성</button></div><div id="ppt-info" style="display:none;" class="ppt-info"></div>`;
+  }catch(e){document.getElementById('oa').innerHTML=`<div style="color:red;font-size:14px;padding:1rem 0;">오류: ${e.message}</div>`;}
+}
+
+function swMt(el,idx){document.querySelectorAll('.mt').forEach((t,i)=>{t.classList.toggle('on',i===idx);document.getElementById(`mt${i}`).style.display=i===idx?'':'none';});}
+function cpTxt(t){navigator.clipboard.writeText(t);}
+function cpAll(){navigator.clipboard.writeText([...document.querySelectorAll('.ocontent,.ctxt')].map(e=>e.textContent).join('\n\n'));}
+function reqPPT(){
+  if(!lastData)return;
+  document.getElementById('ppt-info').style.display='block';
+  document.getElementById('ppt-info').innerHTML='PPT 생성은 Claude.ai에서 "PPT 파일 생성해줘" 메시지와 함께 아래 데이터를 붙여넣으세요.<br><br><code style="font-size:11px;word-break:break-all;">'+JSON.stringify(lastData).slice(0,300)+'...</code>';
+}
+</script>
+</body>
+</html>
