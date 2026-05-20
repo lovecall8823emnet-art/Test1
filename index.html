@@ -116,19 +116,16 @@
     <h1>Ad Brief Generator</h1>
     <p>이미지 분석 · 톤앤무드 추론 · 브리프 + 카피 자동 생성</p>
   </div>
-
   <div class="api-setup">
     <p class="lbl">Anthropic API 키 입력</p>
     <input type="password" id="api-key" placeholder="sk-ant-api03-..." oninput="saveKey(this.value)">
     <div class="warn-box">키는 브라우저 로컬에만 저장되며 외부로 전송되지 않습니다. platform.claude.com에서 발급받으세요.</div>
   </div>
-
   <div class="step-bar">
     <button class="sbtn on" onclick="goStep(0)">01 이미지</button>
     <button class="sbtn" onclick="goStep(1)">02 캠페인</button>
     <button class="sbtn" onclick="goStep(2)">03 결과+PPT</button>
   </div>
-
   <div id="p0" class="panel on">
     <div class="card">
       <p class="lbl">시안 / 제품 이미지 업로드</p>
@@ -146,7 +143,6 @@
       </div>
       <div id="vision-result" style="display:none;"></div>
     </div>
-
     <div class="card">
       <p class="lbl">소재 노출 포맷</p>
       <div class="fmt-row">
@@ -160,7 +156,6 @@
     </div>
     <button class="btn" onclick="goStep(1)">다음 → 캠페인 정보</button>
   </div>
-
   <div id="p1" class="panel">
     <div class="card">
       <div class="fr">
@@ -213,25 +208,19 @@
       <button class="btn primary" onclick="doGenerate()" style="flex:1;">✦ 브리프 + 카피 생성</button>
     </div>
   </div>
-
   <div id="p2" class="panel">
     <div id="oa" style="color:var(--text2);font-size:14px;padding:2rem 0;text-align:center;">
       <span class="dot">●</span> AI가 작성 중입니다...
     </div>
   </div>
 </div>
-
 <script>
 let imgs=[], fmts=['1:1 피드'], visionData=null, lastData=null;
 const API_URL='https://api.anthropic.com/v1/messages';
-
 function getKey(){return document.getElementById('api-key').value.trim()||localStorage.getItem('adbrief_key')||'';}
 function saveKey(v){if(v)localStorage.setItem('adbrief_key',v);}
 window.addEventListener('load',()=>{const k=localStorage.getItem('adbrief_key');if(k)document.getElementById('api-key').value=k;});
-
-function goStep(n){
-  ['p0','p1','p2'].forEach((id,i)=>{document.getElementById(id).classList.toggle('on',i===n);document.querySelectorAll('.sbtn')[i].classList.toggle('on',i===n);});
-}
+function goStep(n){['p0','p1','p2'].forEach((id,i)=>{document.getElementById(id).classList.toggle('on',i===n);document.querySelectorAll('.sbtn')[i].classList.toggle('on',i===n);});}
 function doFiles(files){[...files].slice(0,4-imgs.length).forEach(f=>{if(!f.type.startsWith('image/'))return;const r=new FileReader();r.onload=e=>addImg(e.target.result);r.readAsDataURL(f);});}
 function doDrop(e){e.preventDefault();doFiles(e.dataTransfer.files);}
 function addImg(src){if(imgs.length>=4)return;imgs.push(src);renderImgs();}
@@ -244,25 +233,19 @@ function renderImgs(){
 function tFmt(el){el.classList.toggle('on');fmts=[...document.querySelectorAll('.fc.on')].map(c=>c.dataset.fmt);}
 document.querySelectorAll('.chips').forEach(g=>g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on'))));
 function gChips(id){return[...document.querySelectorAll(`#${id} .chip.on`)].map(c=>c.dataset.v);}
-
 async function callAPI(messages, maxTokens=1200){
   const key=getKey();
   if(!key){alert('API 키를 먼저 입력해주세요.');return null;}
-  const resp=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20251001',max_tokens:maxTokens,messages})});
+  const resp=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5-20251001',max_tokens:maxTokens,messages})});
   if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API 오류');}
   const data=await resp.json();
   return data.content?.map(b=>b.text||'').join('')||'';
 }
-
 async function analyzeImages(){
   const btn=document.getElementById('abtn');
   btn.disabled=true;btn.innerHTML='<span class="dot">●</span> 분석 중...';
   const imgContent=imgs.map(src=>({type:'image',source:{type:'base64',media_type:src.startsWith('data:image/png')?'image/png':src.startsWith('data:image/webp')?'image/webp':'image/jpeg',data:src.split(',')[1]}}));
-  const prompt=`당신은 비주얼 크리에이티브 디렉터입니다. 업로드된 광고 시안 또는 제품 이미지를 분석하여 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만.
-
-{"overall_mood":"전체적인 분위기 한 문장","color_palette":{"dominant":["#hex1","#hex2","#hex3"],"description":"색상 분위기"},"style_keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"trend_matches":[{"name":"트렌드명1","desc":"이유 1줄"},{"name":"트렌드명2","desc":"이유 1줄"},{"name":"트렌드명3","desc":"이유 1줄"}],"recommended_tones":["톤1","톤2","톤3"],"visual_direction":"소재 제작 방향 2~3줄","media_fit":{"best":"최적 매체와 이유","caution":"주의점"},"copy_vibe":"어울리는 카피 톤 설명"}
-
-트렌드명은 2024-2026 실제 비주얼 트렌드 사용: Quiet Luxury, Clean Girl, Dark Academia, Y2K, Coastal Grandmother, Dopamine Dressing, Indie Sleaze, Gorpcore, Mob Wife, Old Money, Soft Life 등.`;
+  const prompt=`당신은 비주얼 크리에이티브 디렉터입니다. 업로드된 광고 시안 또는 제품 이미지를 분석하여 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만.\n\n{"overall_mood":"전체적인 분위기 한 문장","color_palette":{"dominant":["#hex1","#hex2","#hex3"],"description":"색상 분위기"},"style_keywords":["키워드1","키워드2","키워드3","키워드4","키워드5"],"trend_matches":[{"name":"트렌드명1","desc":"이유 1줄"},{"name":"트렌드명2","desc":"이유 1줄"},{"name":"트렌드명3","desc":"이유 1줄"}],"recommended_tones":["톤1","톤2","톤3"],"visual_direction":"소재 제작 방향 2~3줄","media_fit":{"best":"최적 매체와 이유","caution":"주의점"},"copy_vibe":"어울리는 카피 톤 설명"}\n\n트렌드명은 2024-2026 실제 비주얼 트렌드 사용: Quiet Luxury, Clean Girl, Dark Academia, Y2K, Coastal Grandmother, Dopamine Dressing, Indie Sleaze, Gorpcore, Mob Wife, Old Money, Soft Life 등.`;
   try{
     const raw=await callAPI([{role:'user',content:[...imgContent,{type:'text',text:prompt}]}],900);
     if(!raw)return;
@@ -272,7 +255,6 @@ async function analyzeImages(){
   }catch(e){document.getElementById('vision-result').style.display='block';document.getElementById('vision-result').innerHTML='<p style="color:var(--text2);font-size:13px;padding:8px 0;">분석 오류: '+e.message+'</p>';}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-eye" style="font-size:15px;"></i> 다시 분석';
 }
-
 function renderVision(v){
   const swatches=(v.color_palette?.dominant||[]).map(c=>`<div class="swatch" style="background:${c};" title="${c}"></div><span style="font-size:11px;color:var(--text2);">${c}</span>`).join('');
   const tags=(v.style_keywords||[]).map(k=>`<span class="mood-tag">${k}</span>`).join('');
@@ -280,14 +262,12 @@ function renderVision(v){
   document.getElementById('vision-result').style.display='block';
   document.getElementById('vision-result').innerHTML=`<div class="vision-card"><p class="lbl" style="margin-bottom:8px;">AI 이미지 분석 결과</p><p style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:10px;">${v.overall_mood||''}</p><p class="lbl">추출 색상</p><div class="color-row">${swatches}</div><p class="lbl" style="margin-top:10px;">스타일 키워드</p><div class="mood-tags">${tags}</div><p class="lbl" style="margin-top:10px;">매칭 비주얼 트렌드</p><div class="trend-row">${trends}</div><p class="lbl" style="margin-top:10px;">소재 제작 방향</p><p style="font-size:13px;color:var(--text);line-height:1.6;">${v.visual_direction||''}</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;"><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;"><p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:3px;">최적 매체</p><p style="font-size:12px;color:var(--text);line-height:1.5;">${v.media_fit?.best||''}</p></div><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:8px 10px;"><p style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:3px;">카피 바이브</p><p style="font-size:12px;color:var(--text);line-height:1.5;">${v.copy_vibe||''}</p></div></div></div>`;
 }
-
 function applyTones(tones){
   const map={'트렌디':'트렌디하고 감각적인','전문':'신뢰감 있는 전문적인','신뢰':'신뢰감 있는 전문적인','친근':'친근하고 유머러스한','럭셔리':'럭셔리하고 프리미엄','프리미엄':'럭셔리하고 프리미엄','감성':'감성적이고 따뜻한','따뜻':'감성적이고 따뜻한','혜택':'직접적이고 혜택 중심의','미니멀':'미니멀하고 세련된','세련':'미니멀하고 세련된','레트로':'빈티지하고 레트로한','빈티지':'빈티지하고 레트로한','다크':'다크하고 엣지있는','엣지':'다크하고 엣지있는','내추럴':'내추럴하고 유기적인'};
   document.querySelectorAll('#tc .chip').forEach(c=>c.classList.remove('on'));
   tones.forEach(t=>{document.querySelectorAll('#tc .chip').forEach(c=>{const v=c.dataset.v;if(Object.entries(map).some(([k,m])=>m===v&&t.toLowerCase().includes(k.toLowerCase())))c.classList.add('on');});});
   document.getElementById('tone-badge').style.display='inline-flex';
 }
-
 async function doGenerate(){
   const brand=document.getElementById('brand').value.trim();
   const goal=document.getElementById('goal').value;
@@ -317,7 +297,6 @@ async function doGenerate(){
     document.getElementById('oa').innerHTML=`${vsBadge}<div class="osec"><p class="ol">애드브리프</p><div class="ocontent">${briefText}</div></div><div class="osec"><p class="ol">카피 추천</p><ul class="clist">${copyHtml}</ul></div><div style="margin-top:1rem;"><p class="lbl" style="margin-bottom:8px;">소재 예시 미리보기</p><div class="mock-tabs"><button class="mt on" onclick="swMt(this,0)">메타 피드</button><button class="mt" onclick="swMt(this,1)">네이버 배너</button><button class="mt" onclick="swMt(this,2)">검색광고 SA</button></div><div class="mframe"><div id="mt0"><div class="mfeed"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:32px;height:32px;border-radius:50%;background:var(--bg3);"></div><div><div style="font-size:13px;font-weight:500;">${brand}</div><div style="font-size:10px;color:var(--text3);">광고</div></div></div><div class="mimgbox">${iHtml}</div><div style="font-size:14px;font-weight:500;margin-bottom:3px;">${mc.head||'헤드라인'}</div><div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.5;">${mc.sub||'서브 카피'}</div><span class="mctabtn">${mc.cta||'지금 보기'}</span></div></div><div id="mt1" style="display:none;"><div style="padding:10px 14px;display:flex;align-items:center;gap:10px;"><div style="width:80px;height:80px;border-radius:var(--radius);background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;">${iHtml}</div><div><div style="font-size:13px;font-weight:500;">${mc.head||'헤드라인'}</div><div style="font-size:12px;color:var(--text2);margin:2px 0;">${mc.sub||'서브'}</div><div style="font-size:11px;font-weight:500;color:#0066ff;">${mc.cta||'자세히 보기 >'}</div></div></div></div><div id="mt2" style="display:none;"><div style="padding:10px 14px;"><div style="display:flex;gap:6px;margin-bottom:8px;"><span style="padding:5px 10px;background:var(--bg3);border-radius:4px;font-size:12px;">${brand}</span><span style="padding:5px 10px;background:var(--bg3);border-radius:4px;font-size:12px;">추천</span></div><div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;"><div style="font-size:10px;color:orange;font-weight:500;margin-bottom:2px;">광고</div><div style="font-size:14px;color:#0066ff;font-weight:500;margin-bottom:3px;">${mc.head||'헤드라인'}</div><div style="font-size:12px;color:var(--text2);line-height:1.5;">${mc.sub||'설명'} | ${brand}</div></div></div></div></div></div><div class="act-row"><button class="pptbtn" onclick="reqPPT()"><i class="ti ti-file-type-ppt" style="font-size:15px;"></i> PPT 요청 (Claude에서)</button><button class="abtn" onclick="cpAll()"><i class="ti ti-copy" style="font-size:13px;"></i> 전체 복사</button><button class="abtn" onclick="goStep(1)"><i class="ti ti-refresh" style="font-size:13px;"></i> 다시 생성</button></div><div id="ppt-info" style="display:none;" class="ppt-info"></div>`;
   }catch(e){document.getElementById('oa').innerHTML=`<div style="color:red;font-size:14px;padding:1rem 0;">오류: ${e.message}</div>`;}
 }
-
 function swMt(el,idx){document.querySelectorAll('.mt').forEach((t,i)=>{t.classList.toggle('on',i===idx);document.getElementById(`mt${i}`).style.display=i===idx?'':'none';});}
 function cpTxt(t){navigator.clipboard.writeText(t);}
 function cpAll(){navigator.clipboard.writeText([...document.querySelectorAll('.ocontent,.ctxt')].map(e=>e.textContent).join('\n\n'));}
